@@ -18,6 +18,8 @@ class Timespace(Curvespace):
         self.t_label = "$t$"       # Label del eje x del gráfico de respuesta temporal. Es t por defecto
         self.y_label = "$y$"       # Label del eje y del gráfico de respuesta temporal. Es y por defecto
         self.x_label = "$x$"            # Label del eje y(2) del gráfico de respuesta temporal. Corresponde a la entrada y es x por defecto
+        self.t0 = None
+        self.tf = None
         # todo agregar para que se pueda graficar la entrada con la salida
 
     # update: Método para actualizar los valores de la curva sin tener que borrarla y crearla de vuelta
@@ -47,6 +49,8 @@ class Timespace(Curvespace):
 
         if c_type == 0:
             self.simulada(c_type, data, name, color, t_unit, y_unit, x_unit)
+        elif c_type == 7:
+            self.mc(c_type, data, name, color, t_unit, y_unit, x_unit)
         elif 1 <= c_type <= 6:
             self.teorica(c_type, data, name, color, t_unit, y_unit, x_unit)
 
@@ -59,12 +63,37 @@ class Timespace(Curvespace):
                 if self.curves[i].plot_timecurve(ax, graphx):  # Grafico fase
                     h.append(Line2D([], [], color=self.curves[i].color, label=self.curves[i].name))
                 else: self.curves[i].visibility = False
+
+        if self.t0 != None and self.tf != None: ax.set_xlim(self.t0, self.tf)
+        elif self.t0 != None:
+            tf = 0
+            for i in range(len(self.curves)):
+                if self.curves[i].t[-1] > tf:
+                    tf = self.curves[i].t[-1]
+            ax.set_xlim(self.t0, tf)
+        elif self.tf != None:
+            t0 = self.tf
+            for i in range(len(self.curves)):
+                if self.curves[i].t[0] < t0:
+                    tf = self.curves[i].t[0]
+            ax.set_xlim(t0, self.tf)
+
         ax.legend(handles=h)
         ax.set_title(self.title)
         ax.set_xlabel(self.t_label + " $\\left [" + self.t_unit + "\\right ]$")
         ax.set_ylabel(self.y_label + " $\\left [" + self.y_unit + "\\right ]$")
         ax.grid()
         return
+
+    def set_t0(self, t0):
+        self.t0 = t0
+
+    def set_tf(self, tf):
+        self.tf = tf
+
+    def set_interval(self, interval):
+        self.t0 = interval[0]
+        self.tf = interval[1]
 
     # change_t_unit: Cambia la unidad del tiempo de s a min o viceversa
     # Devuelve False en caso de error
@@ -176,6 +205,17 @@ class Timespace(Curvespace):
             print("Los datos ingresados no son válidos")
             r = False
         return r
+
+    def mc(self, r_type, data, name, color, t_unit="s", y_unit="V", x_unit="V"):
+        # print("simulada")
+        r = True
+        s = tMC(7, data, name, color, t_unit="s", y_unit="V", x_unit="V")
+        if s.t != [] and s.y != []:
+            self.curves.append(s)
+        else:
+            print("Los datos ingresados no son válidos")
+            r = False
+        return r
 ########################################################################################################################
 
 ########################################################################################################################
@@ -215,7 +255,11 @@ class Timecurve(Curve):
         if graphx:
             if self.x != []:
                 ax.plot(self.t, self.x, label="Entrada " + self.name, color="orange")
-        ax.plot(self.t, self.y, self.color, label="Salida " + self.name)       # Grafico la funcipon en el tiempo
+        if self.type != 7:
+            ax.plot(self.t, self.y, self.color, label=self.name)       # Grafico la funcion en el tiempo
+        else:
+            for i in range(len(self.t)):
+                ax.plot(self.t[i], self.y[i], self.color, label=self.name)
         return True
 
     # change_t_unit: Cambia la unidad del tiempo de s a min o viceversa
@@ -380,8 +424,100 @@ class tSim(Timecurve):
                     print("El archivo no cumple con el formato adecuado")
                     r = False
         return r
+########################################################################################################################
 
 ########################################################################################################################
+# Clase tMC: Simulación de Monte Carlo, hija de la clase Timecurve
+# Tiene unos parámetros extra: - Mentira por ahora no tiene
+# ----------------------------------------------------------------------------------------------------------------------
+class tMC(Timecurve):
+    def __init__(self, c_type, data, name="", color="", t_unit="s", y_unit="V", x_unit="V"):
+        super().__init__(c_type, data, name, color, t_unit, y_unit, x_unit)
+        if self.check_file(data):
+            self.t, self.y, self.x = self.check_data(data)
+
+    # change_data: Revisa la validez de los datos nuevos.
+    # Devuelve False si hubo error.
+    def change_data(self, path):
+        r = False
+        if self.check_file(path):
+            self.rawdata = path
+            self.t, self.y, self.x = self.check_data(self.rawdata)
+            r = True
+        return r
+
+    # check_data: Parsea el txt de la simulación de Montecarlo de LTSpice
+    # Acepta 2 formatos: t|y o t|y|x
+    # Devuelve t, y, x con x = zeros dependiendo del caso
+    def check_data(self, path):
+        file = open(path, "r")
+        file.readline()
+        aux = file.readline()
+        j1 = aux.find("/")
+        j2 = aux.find(")")
+        runs = int(aux[j1 + 1: j2])
+
+        aux = file.readline().split("\t")
+        n = len(aux)
+        count = 0
+
+        for line in file:
+            if line != 'Step Information: Run=2  (Run: 2/' + str(runs) + ')\n':
+                count += 1
+            else:
+                break
+        file.close()
+
+        t = np.zeros((runs, count - 1))
+        y = np.zeros((runs, count - 1))
+        x = np.zeros((runs, count - 1))
+
+        l = open(path, "r")
+
+        l.readline()
+        for k in range(runs):
+            aux = l.readline()
+            for i in range(count - 1):
+                aux = l.readline().split("\t")
+                if aux[0].find('Run') == -1:
+                    t[k][i] = aux[0]
+                    y[k][i] = aux[1]
+                    if n == 3: x[k][i] = aux[2]
+                else: break
+            if y[k].all() < 1E-12:
+                print("Es la ", k)
+        l.close()
+
+        return t, y, x
+
+    # check_file: Revisa que el archivo exista, que sea .txt y que tenga el formato adecuado
+    # Devuelve False en caso de error
+    def check_file(self, path):
+        r = True
+        ext = os.path.splitext(path)[1]
+        if self.type == 2 and ext != ".txt":
+            print("El archivo de la simulación no está en formato .txt")
+            r = False
+            return r
+        if not os.path.isfile(path):
+            print("El archivo no existe")
+            r = False
+        else:
+            if not os.access(path, os.R_OK):
+                print("El archivo no es legible")
+                r = False
+            else:
+                file = open(path, "r")
+                if len(file.readline().split("\t")) != 2:
+                    print("El archivo no cumple con el formato adecuado")
+                    r = False
+                elif file.readline().find('Step Information: Run=1') == -1:
+                    print("El archivo no cumple con el formato adecuado")
+                    r = False
+        return r
+########################################################################################################################
+
+
 
 ########################################################################################################################
 # Clase tTeo: Representa una curva de tiempo teórica, hija de la clase Timecurve
