@@ -22,6 +22,7 @@ class Frecspace(Curvespace):
         self.title = "Respuesta en frecuencia"      # Título del gráfico
         self.mod_title = "Módulo"                   # Título del gráfico de módulo
         self.ph_title = "Fase"                      # Título del gráfico de fase
+        self.interval = [None, None]
 
     # update: Método para actualizar los valores de la curva sin tener que borrarla y crearla de vuelta
     # OJO: En vez de recibir el tipo de curva, recibe el índice
@@ -54,6 +55,8 @@ class Frecspace(Curvespace):
     def plot_mod(self, ax):
         self.fix_units()
         h = []
+        if self.interval != [None, None]:
+            ax.set_xlim(self.interval)
         for i in range(len(self.curves)):
             if self.curves[i].visibility:
                 if self.curves[i].plot_curve_mod(ax):  # Grafico módulo
@@ -70,6 +73,8 @@ class Frecspace(Curvespace):
     def plot_ph(self, ax):
         self.fix_units()
         h = []
+        if self.interval != [None, None]:
+            ax.set_xlim(self.interval)
         for i in range(len(self.curves)):
             if self.curves[i].visibility:
                 if self.curves[i].plot_curve_ph(ax):  # Grafico fase
@@ -86,6 +91,24 @@ class Frecspace(Curvespace):
         ax.set_ylabel(self.y_ph_label + " $\\left[" + self.curves[0].ph_unit + "\\right]$")
         ax.grid()
         return
+
+    # set_interval: Permite definir el intervalo en el que se graficará el eje x
+    def set_interval(self, intervalo):
+        r = False
+        if len(intervalo) >= 2:
+            if isinstance(intervalo[0], (float, int)) and isinstance(intervalo[1], (float, int)):
+                if 0 < intervalo[0] < intervalo[1]:
+                    r = True
+        if r:
+            self.interval = intervalo
+            for i in range(len(self.curves)):
+                if self.curves[i].type == 1:
+                    wi = 2 * np.pi * self.interval[0]
+                    wf = 2 * np.pi * self.interval[1]
+                    num = self.curves[i].rawdata[0]
+                    den = self.curves[i].rawdata[1]
+                    self.curves[i].change_data([num, den, [wi, wf]])
+        return r
 
     # change_title: Setter para el título del gráfico
     # Devuelve False en caso de error
@@ -369,10 +392,11 @@ class Teo(FrecCurve):
     # Devuelve False si hubo error.
     def change_data(self, data):
         r = True
-        num, den = self.check_data(self.rawdata)        # Revisa los datos nuevos
+        num, den = self.check_data(data)        # Revisa los datos nuevos
         if num is not None and den is not None:         # Si están en orden, hace la modificación
+            self.rawdata = data
             self.H = ss.TransferFunction(num, den)
-            self.w, self.mod, self.ph = ss.bode(self.H)
+            self.w, self.mod, self.ph = ss.bode(self.H, self.w)
         else:
             print("Los datos ingresados no son válidos")
             r = False
@@ -399,7 +423,7 @@ class Teo(FrecCurve):
 
         if len(aux) == 2:
             self.wi, self.wf = aux
-            self.w = np.linspace(self.wi, self.wf)
+            self.w = np.linspace(self.wi, self.wf, 1000)
         elif len(aux) == 3:
             self.wi, self.wf, self.points = aux
             self.points = round(self.points)

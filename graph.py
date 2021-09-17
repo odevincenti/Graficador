@@ -5,6 +5,7 @@ from frecspace import Frecspace
 from timespace import Timespace
 from calculate_H import draw_H, normalize_H
 
+'''
 R1 = 3.3E3
 R3 = 1.5E3
 C1 = 18E-9
@@ -17,7 +18,7 @@ f0 = (den[0]/den[-1]) ** (-1 / (len(den)-1)) / (2 * np.pi)
 
 # draw_H(num, den)        # Dibuja la H obtenida
 # num2, den2 = normalize_H(num, den)  # Normaliza H
-# draw_H(num2, den2)      # Dibuja nueva H
+# draw_H(num2, den2)      # Dibuja nueva H'''
 
 #GRÁFICOS
 TS = Timespace()        # Crea espacio de curvas de tiempo
@@ -34,8 +35,9 @@ fig, ax = plt.subplots(1)         # Descomentar para ver sólo módulo o fase
 # ax2 = ax                          # Descomentar para sólo fase
 fig.suptitle(TS.title)
 TS.plot_time(ax)
-fig.tight_layout()
-plt.savefig(TS.title + ".jpg", dpi=300)
+print("Se rompe en show ???")
+# fig.tight_layout()
+# plt.savefig(TS.title + ".jpg", dpi=300)
 plt.show()
-
+print("Termino")
 

@@ -64,19 +64,19 @@ class Timespace(Curvespace):
                     h.append(Line2D([], [], color=self.curves[i].color, label=self.curves[i].name))
                 else: self.curves[i].visibility = False
 
-        if self.t0 != None and self.tf != None: ax.set_xlim(self.t0, self.tf)
+        if self.t0 != None and self.tf != None: ax.set_xlim([self.t0, self.tf])
         elif self.t0 != None:
             tf = 0
             for i in range(len(self.curves)):
                 if self.curves[i].t[-1] > tf:
                     tf = self.curves[i].t[-1]
-            ax.set_xlim(self.t0, tf)
+            ax.set_xlim([self.t0, tf])
         elif self.tf != None:
             t0 = self.tf
             for i in range(len(self.curves)):
                 if self.curves[i].t[0] < t0:
                     tf = self.curves[i].t[0]
-            ax.set_xlim(t0, self.tf)
+            ax.set_xlim([t0, self.tf])
 
         ax.legend(handles=h)
         ax.set_title(self.title)
@@ -459,33 +459,26 @@ class tMC(Timecurve):
 
         aux = file.readline().split("\t")
         n = len(aux)
-        count = 0
-
-        for line in file:
-            if line != 'Step Information: Run=2  (Run: 2/' + str(runs) + ')\n':
-                count += 1
-            else:
-                break
         file.close()
 
-        t = np.zeros((runs, count - 1))
-        y = np.zeros((runs, count - 1))
-        x = np.zeros((runs, count - 1))
+        t = []
+        y = []
+        x = []
 
         l = open(path, "r")
 
         l.readline()
-        for k in range(runs):
-            aux = l.readline()
-            for i in range(count - 1):
+        aux = l.readline()
+        for k in range(runs - 1):
+            t.append([])
+            y.append([])
+            x.append([])
+            aux = l.readline().split("\t")
+            while aux[0].find('Run') == -1:
+                t[k].append(float(aux[0]))
+                y[k].append(float(aux[1]))
+                if n == 3: x[k].append(float(aux[2]))
                 aux = l.readline().split("\t")
-                if aux[0].find('Run') == -1:
-                    t[k][i] = aux[0]
-                    y[k][i] = aux[1]
-                    if n == 3: x[k][i] = aux[2]
-                else: break
-            if y[k].all() < 1E-12:
-                print("Es la ", k)
         l.close()
 
         return t, y, x

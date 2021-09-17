@@ -7,9 +7,9 @@ import sympy as sp
 # Recibe el numerador y denominador de H
 # ----------------------------------------------------------------------------------------------------------------------
 def draw_H(num, den):
-    num = num/num[-1]
-    den = den/den[-1]
-    w0 = den[0] ** (-1 / (len(den)-1))
+    num2 = num/num[-1]
+    den2 = den/den[-1]
+    w0 = den2[0] ** (-1 / (len(den)-1))
     f0 = w0 / (2 * np.pi)
     n = f"\t \t"
     d = f"\t \t"
@@ -36,10 +36,25 @@ def draw_H(num, den):
 # Devuelve el numerador y denominador de H normalizada
 # ----------------------------------------------------------------------------------------------------------------------
 def normalize_H(num, den):
+    i = 1
+    while num[-i] == 0:
+        i = i + 1
+    num = num / num[-i]
+    i = 1
+    while den[-i] == 0:
+        i = i + 1
+    den = den/den[-i]
+    return num, den
+
+'''
     s = sp.symbols('s')
-    num_roots = sp.nroots(num[0]*s**3 + num[1]*s**2 + num[2]*s + num[3])
-    den_roots = sp.nroots(den[0]*s**3 + den[1]*s**2 + den[2]*s + den[3])
+    num_roots = 0
+    den_roots = 0
+    for i in range(len(num)):
+        num_roots = num_roots + num[i]*s**(len(num) - 1 - i)
+    for i in range(len(den)):
+        den_roots = den_roots + den[i]*s**(len(den) - 1 - i)
     num = np.array([num[0], -num[0]*(sp.re(num_roots[1]) + sp.im(num_roots[1])*1j + sp.re(num_roots[2]) + sp.im(num_roots[2])*1j), num[0]*np.abs((sp.re(num_roots[1]) + sp.im(num_roots[1])*1j))**2])
     den = np.array([den[0], -den[0]*(den_roots[0] + den_roots[2]), den[0]*den_roots[0]*den_roots[2]])
-    return num, den
+    return num, den'''
 ########################################################################################################################
