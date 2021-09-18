@@ -73,19 +73,43 @@ class Frecspace(Curvespace):
     def plot_ph(self, ax):
         self.fix_units()
         h = []
+        phi = 180.0
+        phf = -180.0
         if self.interval != [None, None]:
             ax.set_xlim(self.interval)
         for i in range(len(self.curves)):
             if self.curves[i].visibility:
                 if self.curves[i].plot_curve_ph(ax):  # Grafico fase
                     h.append(Line2D([], [], color=self.curves[i].color, label=self.curves[i].name))
+                    if self.curves[i].type != 4 and phi > self.curves[i].ph.min():
+                        phi = self.curves[i].ph.min()
+                    elif self.curves[i].type == 4 and phi > self.curves[i].ph.min():
+                        phi = self.curves[i].ph.min()
+                    if self.curves[i].type != 4 and phf < self.curves[i].ph.max():
+                        phf = self.curves[i].ph.max()
+                    elif self.curves[i].type == 4 and phf < self.curves[i].ph.max():
+                        phf = self.curves[i].ph.max()
                 else: self.curves[i].visibility = False
+
         ax.legend(handles=h)
         if self.ph_unit == "°":
-            ax.set_yticks([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+            yticks_grad = [-180, -135, -90, -45, 0, 45, 90, 135, 180]
+            yticks = self.scale_ph(phi, phf, yticks_grad)
+            ax.set_yticks([round(x) for x in yticks])
         elif self.ph_unit == "rad":
-            ax.set_yticks([-np.pi, -3*np.pi/4, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, 3*np.pi/4, np.pi])
-            ax.set_yticklabels(["$-\\pi$", "$-\\frac{3}{4} \\pi$", "$-\\frac{\\pi}{2}$", "$-\\frac{\\pi}{4}$", 0, "$\\frac{\\pi}{4}$", "$\\frac{\\pi}{2}$", "$\\frac{3}{4} \\pi$", "$\\pi$"])
+            yticks_rad = [-np.pi, -3*np.pi/4, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, 3*np.pi/4, np.pi]
+            yticks = self.scale_ph(phi, phf, yticks_rad)
+            yticklabels_rad = ["$-\\pi$", "$-\\frac{3}{4} \\pi$", "$-\\frac{\\pi}{2}$", "$-\\frac{\\pi}{4}$", 0, "$\\frac{\\pi}{4}$", "$\\frac{\\pi}{2}$", "$\\frac{3}{4} \\pi$", "$\\pi$"]
+            ax.set_yticks(yticks)
+            yticklabels = []
+            k = 0
+            for i in range(len(yticks)):
+                if yticks[i] in yticks_rad:
+                    yticklabels.append(yticklabels_rad[k])
+                    k = k + 1
+                else:
+                    yticklabels.append("")
+            ax.set_yticklabels(yticklabels)
         ax.set_title(self.ph_title)
         ax.set_xlabel(self.x_ph_label + " $\\left[" + self.curves[0].w_unit + "\\right]$")
         ax.set_ylabel(self.y_ph_label + " $\\left[" + self.curves[0].ph_unit + "\\right]$")
@@ -109,6 +133,20 @@ class Frecspace(Curvespace):
                     den = self.curves[i].rawdata[1]
                     self.curves[i].change_data([num, den, [wi, wf]])
         return r
+
+    def scale_ph(self, phi, phf, yticks):
+        for i in range(len(yticks)):
+            if phi < yticks[i]:
+                yticks = yticks[(i - 1)::]
+                for j in range(i - 1, len(yticks)):
+                    if phf < yticks[j]:
+                        yticks = yticks[:(j + 1):]
+                        break
+                break
+        if len(yticks) == 2:
+            yticks = [yticks[0], (yticks[1] - yticks[0]) / 4 + yticks[0], (yticks[1] - yticks[0]) / 2 + yticks[0],
+                      (yticks[1] - yticks[0]) * 3 / 4 + yticks[0], yticks[1]]
+        return yticks
 
     # change_title: Setter para el título del gráfico
     # Devuelve False en caso de error
