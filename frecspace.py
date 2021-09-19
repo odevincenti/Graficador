@@ -138,7 +138,7 @@ class Frecspace(Curvespace):
         for i in range(len(yticks)):
             if phi < yticks[i]:
                 yticks = yticks[(i - 1)::]
-                for j in range(i - 1, len(yticks)):
+                for j in range(0, len(yticks)):
                     if phf < yticks[j]:
                         yticks = yticks[:(j + 1):]
                         break
