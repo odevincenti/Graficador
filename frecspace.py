@@ -500,8 +500,8 @@ class Sim(FrecCurve):
         aux_mod, aux_ph = aux[1][1:-2].split(",")
         count = 2
 
-        self.mod_unit = get_unit(aux_mod)
-        self.ph_unit = get_unit(aux_ph)
+        mod_unit = get_unit(aux_mod)
+        ph_unit = get_unit(aux_ph)
         for line in file:
             if line != "\n":
                 count += 1
@@ -518,11 +518,11 @@ class Sim(FrecCurve):
             aux = l.readline().split("\t")
             w[i] = aux[0]
             aux_mod, aux_ph = aux[1][1:-2].split(",")
-            mod[i] = aux_mod.replace(self.mod_unit, "")
-            ph[i] = aux_ph.replace(self.ph_unit, "")
+            mod[i] = aux_mod.replace(mod_unit, "")
+            ph[i] = aux_ph.replace(ph_unit, "")
         l.close()
 
-        if self.ph_unit == 'Â°': self.ph_unit = '°'
+        #if self.ph_unit == 'Â°': self.ph_unit = '°'
 
         return w, mod, ph
 
@@ -536,7 +536,7 @@ class Sim(FrecCurve):
             r = False
             return r
         if not os.path.isfile(path):
-            print("El archivo no existe")
+            print("El archivo " + path + "no existe")
             r = False
         else:
             if not os.access(path, os.R_OK):
@@ -573,6 +573,7 @@ class Med(FrecCurve):
     # check_data: Parsea el csv de la medición de la Digilent, asume que tiene el formato de los ejemplos
     # Devuelve w, mod, ph
     def check_data(self, path):
+        fix_csv(path)
         file = open(path, "r")
         count = 0
         for line in file:
@@ -593,10 +594,6 @@ class Med(FrecCurve):
             j2 = aux.find(")")
             units.append(aux[j1 + 1: j2])
             aux = aux[j2 + 1:]
-        self.w_unit = units[0]
-        self.mod_unit = units[1]
-        if units[2] == "deg":
-            self.ph_unit = "°"
 
         for i in range(count - 1):
             aux = l.readline().split(",")
@@ -617,7 +614,7 @@ class Med(FrecCurve):
             r = False
             return r
         if not os.path.isfile(path):
-            print("El archivo no existe")
+            print("El archivo " + path + "no existe")
             r = False
         else:
             if not os.access(path, os.R_OK):
@@ -705,7 +702,7 @@ class MC(FrecCurve):
             r = False
             return r
         if not os.path.isfile(path):
-            print("El archivo no existe")
+            print("El archivo " + path + "no existe")
             r = False
         else:
             if not os.access(path, os.R_OK):
@@ -774,4 +771,35 @@ def get_ls(type):
     return ls
 ########################################################################################################################
 
+def fix_csv(path):
+    file = open(path, "r")
+    count = 0
+    for line in file:
+        if line != "\n":
+            count += 1
+    file.close()
 
+    w = np.zeros(count - 1)
+    mod = np.zeros(count - 1)
+    ph = np.zeros(count - 1)
+
+    l = open(path, "r")
+
+    headers = l.readline().split(",")
+    for i in range(count - 1):
+        aux = l.readline().split(",")
+        w[i] = aux[0]
+        mod[i] = aux[2]
+        ph[i] = aux[1]
+    l.close()
+
+    if headers[1] == "Trace th (deg)":
+        file = open(path, "w")
+        file.write(headers[0] + "," + headers[2].removesuffix("\n") + "," + headers[1])
+        file.write("\n")
+        for i in range(len(w)):
+            file.write(str(w[i]) + "," + str(mod[i]) + "," + str(ph[i]))
+            file.write('\n')
+        file.close()
+
+    return path
