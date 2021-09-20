@@ -793,7 +793,7 @@ def fix_csv(path):
         ph[i] = aux[1]
     l.close()
 
-    if headers[1] == "Trace th (deg)":
+    if headers[1] == "Trace th (deg)" or headers[1] == "Trace < (deg)":
         file = open(path, "w")
         file.write(headers[0] + "," + headers[2].removesuffix("\n") + "," + headers[1])
         file.write("\n")

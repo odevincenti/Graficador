@@ -20,7 +20,7 @@ def par(Ra, Rb):
     return Req
 
 R1 = 1E3
-R2 = 10E3
+R2 = 22E3
 R3 = 1E3
 R4 = 22E3
 Ao = 200E3
@@ -30,8 +30,8 @@ interval = [1, 2E6, 1E4]
 circuit = "No Inversor"
 param = "Zi"
 plot_fo = False
-#modlim_inf = 22E3       # Límite inferior del módulo (Sí, es una atada con alambre)
-#modlim_sup = 24E3       # Límite superior del módulo (Sí, es una atada con alambre)
+modlim_inf = 15E3       # Límite inferior del módulo (Sí, es una atada con alambre)
+modlim_sup = 30E3       # Límite superior del módulo (Sí, es una atada con alambre)
 
 if circuit == "Inversor":
     doc_name = "Inv"
@@ -120,7 +120,7 @@ elif param == "Zi":
 FS.add_curve(4, "D:\Documentos\Materias\\22.01 - TC\TP2 Individual\Simulaciones\\" + circuit + "\\" + doc_name + "_mc" + str(int(round(R2/1E3))) + "k_" + param + ".txt", "Montecarlo", "silver", "Hz")
 FS.add_curve(1, [num, den, [1, 2E6, 1E5]], "Teórica", "blue")
 FS.add_curve(2, "D:\Documentos\Materias\\22.01 - TC\TP2 Individual\Simulaciones\\" + circuit + "\\" + doc_name + str(int(round(R2/1E3))) + "k_" + param + ".txt", "Simulación", "orange", "Hz")
-FS.add_curve(3, "D:\Documentos\Materias\\22.01 - TC\TP2 Individual\Mediciones\\" + doc_name + str(int(round(R2/1E3))) + "k_" + param + ".csv", "Medicion", "green", "Hz", mod_unit)
+FS.add_curve(3, "D:\Documentos\Materias\\22.01 - TC\TP2 Individual\Mediciones\\" + doc_name + str(int(round(R2/1E3))) + "k_" + param + ".csv", "Medición", "green", "Hz", mod_unit)
 
 FS.set_interval([1E3, 2E6])
 #fig, ax = plt.subplots(1)         # Descomentar para ver sólo módulo o fase
@@ -129,8 +129,8 @@ ax, ax2 = ax                        # Comentar para sólo módulo o fase
 # ax2 = ax                          # Descomentar para sólo fase
 fig.suptitle(FS.title)
 FS.plot_mod(ax)
-#ax.plot(np.linspace(1, 2E6, int(1E5)), modlim_inf*np.ones(int(1E5)), color="silver", alpha=0)
-#ax.plot(np.linspace(1, 2E6, int(1E5)), modlim_sup*np.ones(int(1E5)), color="silver", alpha=0)
+ax.plot(np.linspace(1, 2E6, int(1E5)), modlim_inf*np.ones(int(1E5)), color="silver", alpha=0)
+ax.plot(np.linspace(1, 2E6, int(1E5)), modlim_sup*np.ones(int(1E5)), color="silver", alpha=0)
 if plot_fo:
     ax.axvline(fo, color="red")
     ax.axhline(20 * np.log10(GI) - 3, color="red")
@@ -139,6 +139,6 @@ if plot_fo:
     ax2.axvline(fo, color="red")
     ax2.axhline(-45, color="red")
 fig.tight_layout()
-# plt.savefig(TS.title + ".jpg", dpi=300)
+plt.savefig("D:\Documentos\Materias\\22.01 - TC\TP2 Individual\Gráficos\\"  + doc_name + "_" + str(int(R2/1E3)) + "k_" + param + ".jpg", dpi=300)
 plt.show()
 
